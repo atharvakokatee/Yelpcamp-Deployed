@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router({mergeParams: true});
 const Campground = require('../models/campground');
 const middleware = require('../middleware');
+const User = require('../models/user');
+const Notification = require('../models/notification');
 
 router.get('/', (req,res)=>{
     Campground.find({},(err, foundCampgrounds)=>{
@@ -14,7 +16,7 @@ router.get('/', (req,res)=>{
     });
 });
 
-router.post('/', middleware.isLoggedIn,(req,res)=>{
+router.post('/', middleware.isLoggedIn,async (req,res)=>{
     let name = req.body.name;
     let image = req.body.image;
     let price = String(req.body.price);
@@ -24,14 +26,25 @@ router.post('/', middleware.isLoggedIn,(req,res)=>{
         username: req.user.username
     };    
     let newCampground = {name:name,image:image,price:price,description:desc,author:author};
-    Campground.create(newCampground,(err,newlyCreated)=>{
-        if(err){
-            console.log(err);
-        } else{
-            res.redirect('/campgrounds');
-            console.log(newlyCreated);
+    
+    try{
+        let campground = await Campground.create(newCampground);
+        let user = await User.findById(req.user._id).populate('followers').exec();
+        let newNotification = {
+            username: req.user.username,
+            campgroundId: campground.id
         }
-    });
+        for(const follower of user.followers){
+            let notification = await Notification.create(newNotification);
+            follower.notifications.push(notification);
+            follower.save();
+        }
+        // redirect back to campgrounds page
+        res.redirect(`/campgrounds/${ campground.id }`);
+    } catch(err){
+        req.flash('error',err.message);
+        res.redirect('back');
+    }
 });
 
 router.get('/new', middleware.isLoggedIn,(req,res)=>{

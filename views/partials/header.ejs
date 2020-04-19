@@ -28,6 +28,21 @@
                         <a class="nav-link" href="/register">SignUp</a>
                     </li>
                 <% } else{ %>
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" id="navbarDropdown" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Notifications <span class="badge badge-secondary"><%= notifications.length %></span></a>
+                        <ul class="dropdown-menu">
+                          <li class="dropdown-item">
+                              <a href="/notifications">View past notifications</a>
+                          </li>
+                          <% notifications.forEach(function(notification) { %>                          
+                              <li class="dropdown-item">
+                                  <a href="/notifications/<%= notification.id %>">
+                                      <%= notification.username %> created a new campground
+                                  </a>
+                              </li>
+                          <% }); %>
+                        </ul>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="">Signed In As <%= currentUser.username %></a>
                     </li>
