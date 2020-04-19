@@ -4,6 +4,29 @@ const Campground = require('../models/campground');
 const middleware = require('../middleware');
 const User = require('../models/user');
 const Notification = require('../models/notification');
+const multer = require('multer');
+const cloudinary = require('cloudinary');
+require('dotenv').config()
+
+var storage = multer.diskStorage({
+    filename: function(req, file, callback) {
+      callback(null, Date.now() + file.originalname);
+    }
+  });
+  var imageFilter = function (req, file, cb) {
+      // accept image files only
+      if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+          return cb(new Error('Only image files are allowed!'), false);
+      }
+      cb(null, true);
+  };
+  var upload = multer({ storage: storage, fileFilter: imageFilter})
+  
+  cloudinary.config({ 
+    cloud_name: 'dcxsizdmo', 
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
 
 router.get('/', (req,res)=>{
     Campground.find({},(err, foundCampgrounds)=>{
@@ -16,36 +39,36 @@ router.get('/', (req,res)=>{
     });
 });
 
-router.post('/', middleware.isLoggedIn,async (req,res)=>{
-    let name = req.body.name;
-    let image = req.body.image;
-    let price = String(req.body.price);
-    let desc = req.body.description;
-    let author = {
-        id: req.user._id,
-        username: req.user.username
-    };    
-    let newCampground = {name:name,image:image,price:price,description:desc,author:author};
-    
-    try{
-        let campground = await Campground.create(newCampground);
-        let user = await User.findById(req.user._id).populate('followers').exec();
-        let newNotification = {
-            username: req.user.username,
-            campgroundId: campground.id
+router.post('/', middleware.isLoggedIn, upload.single('image'), async function(req,res){
+    cloudinary.uploader.upload(req.file.path,async function(result) {
+        // add cloudinary url for the image to the campground object under image property
+        req.body.campground.image = result.secure_url;
+        // add author to campground
+        req.body.campground.author = {
+          id: req.user._id,
+          username: req.user.username
         }
-        for(const follower of user.followers){
-            let notification = await Notification.create(newNotification);
-            follower.notifications.push(notification);
-            follower.save();
+        try{
+            let campground = await Campground.create(req.body.campground);
+            let user = await User.findById(req.user._id).populate('followers').exec();
+            let newNotification = {
+                username: req.user.username,
+                campgroundId: campground.id
+            }
+            for(const follower of user.followers){
+                let notification = await Notification.create(newNotification);
+                follower.notifications.push(notification);
+                follower.save();
+            }
+            // redirect back to campgrounds page
+            res.redirect(`/campgrounds/${ campground.id }`);
+        } catch(err){
+            req.flash('error',err.message);
+            res.redirect('back');
         }
-        // redirect back to campgrounds page
-        res.redirect(`/campgrounds/${ campground.id }`);
-    } catch(err){
-        req.flash('error',err.message);
-        res.redirect('back');
-    }
+    });
 });
+
 
 router.get('/new', middleware.isLoggedIn,(req,res)=>{
     res.render('campgrounds/new');
