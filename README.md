@@ -1,6 +1,6 @@
 ## Yelpcamp-deployed
 
-! A nodejs web application project from the Udemy course - ([The Web Developer Bootcamp by Colt Steele](https://www.udemy.com/course/the-web-developer-bootcamp/))
+A nodejs web application project from the Udemy course - ([The Web Developer Bootcamp by Colt Steele](https://www.udemy.com/course/the-web-developer-bootcamp/))
 
 ## Live Demo
 
@@ -32,7 +32,7 @@ You can view the website at ([https://powerful-taiga-46097.herokuapp.com/](https
 
 ## Getting Started
 
-!! This app contains API secrets and passwords that have been hidden deliberately, so the app cannot be run with its features on your local machine. However, feel free to clone this repository if necessary.
+:warning: This app contains API secrets and passwords that have been hidden deliberately, so the app cannot be run with its features on your local machine. However, feel free to clone this repository if necessary.
 
 ### Clone or download this repository
 
